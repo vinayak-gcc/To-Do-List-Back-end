@@ -1,54 +1,60 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+const cors = require('cors');
 
-let tasks = []; // Your tasks array
 
-// Serve a simple HTML file (optional)
+//for solving cors error on console
+app.use(cors({
+    origin: 'https://internship-task-omega.vercel.app/', 
+    methods: 'GET,POST,PUT,DELETE',
+    allowedHeaders: 'Content-Type, Authorization'
+}));
+
+app.use(cors({
+    origin: 'https://internship-task-backend-mfy7.onrender.com/', 
+    methods: 'GET,POST,PUT,DELETE',
+    allowedHeaders: 'Content-Type, Authorization'
+}));
+
+let tasks = []; 
+
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html'); // Ensure you have an index.html file to serve
+  res.sendFile(__dirname + '/index.html'); 
 });
 
-// Socket.IO connection handling
 io.on('connection', (socket) => {
   
-  // Send current tasks to new clients
   socket.emit('taskUpdated', tasks);
   
-  // Handle adding a new task
   socket.on('addTask', (newTask) => {
     tasks.push(newTask);
-    io.emit('taskUpdated', tasks); // Notify all clients about the updated tasks
+    io.emit('taskUpdated', tasks); 
   });
 
-  // Handle deleting a task
   socket.on('deleteTask', (index) => {
     tasks.splice(index, 1);
-    io.emit('taskUpdated', tasks); // Notify all clients about the updated tasks
+    io.emit('taskUpdated', tasks); 
   });
 
-  // Handle updating a task
   socket.on('updateTask', ({ index, text }) => {
     if (tasks[index]) {
       tasks[index].text = text;
-      io.emit('taskUpdated', tasks); // Notify all clients about the updated tasks
+      io.emit('taskUpdated', tasks); 
     }
   });
 
-  // Handle completing a task
   socket.on('completeTask', (index) => {
     if (tasks[index]) {
       tasks[index].completed = !tasks[index].completed;
-      io.emit('taskUpdated', tasks); // Notify all clients about the updated tasks
+      io.emit('taskUpdated', tasks); 
     }
   });
 });
 
-// Start the server
 const PORT = process.env.PORT || 3003;
 server.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
