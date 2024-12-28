@@ -1,33 +1,39 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
 const cors = require('cors');
+const app = express();
+app.use(cors());
+const server = http.createServer(app);
 
 
-//for solving cors error on console
+// Enable CORS for all routes
 app.use(cors({
-    origin: 'https://internship-task-omega.vercel.app/', 
-    methods: 'GET,POST,PUT,DELETE',
-    allowedHeaders: 'Content-Type, Authorization'
+  origin: '*', // Allow all origins; change this in production
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // Allow credentials if needed
 }));
 
-app.use(cors({
-    origin: 'https://internship-task-backend-mfy7.onrender.com/', 
-    methods: 'GET,POST,PUT,DELETE',
-    allowedHeaders: 'Content-Type, Authorization'
-}));
+// Handle preflight requests
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(204); // No Content
+});
+
+const io = socketIo(server, {
+  cors: {
+      origin: '*', // Allow all origins for development; restrict in production
+      methods: ['GET', 'POST'],
+      allowedHeaders: ['Content-Type'],
+  },
+});
 
 let tasks = []; 
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html'); 
-});
-
 io.on('connection', (socket) => {
-  
   socket.emit('taskUpdated', tasks);
   
   socket.on('addTask', (newTask) => {
@@ -55,7 +61,6 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 3003;
-server.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+server.listen(3003, () => {
+  console.log(`Server is running on http://localhost:3003/`);
 });
